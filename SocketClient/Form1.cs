@@ -80,6 +80,11 @@ namespace SocketClient
             Send(System.Text.Encoding.UTF8.GetBytes(data));
         }
 
+        public void SendInt(int data)
+        {
+            Send(System.BitConverter.GetBytes(data));
+        }
+
         /// <summary>
         /// 发送消息-byteData
         /// </summary>
@@ -91,17 +96,19 @@ namespace SocketClient
                 //数据byte数组的长度
                 int length = byteData.Length;
 
-                this.clientSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), this.clientSocket);
-                ////头
-                //byte[] head = BitConverter.GetBytes(length);
-
-                ////待发送的数据
-                //byte[] data = new byte[head.Length + byteData.Length];
-                //Array.Copy(head, data, head.Length);
-                //Array.Copy(byteData, 0, data, head.Length, byteData.Length);
+                //this.clientSocket.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), this.clientSocket);
+                //头
+                byte[] head = new byte[1];
+                head[0] =Convert.ToByte(length);
+                //待发送的数据
+                byte[] data = new byte[head.Length + byteData.Length];
+                byte[] alldata = new byte[200];
+                Array.Copy(head, data, head.Length);
+                Array.Copy(byteData, 0, data, head.Length, byteData.Length);
+                Array.Copy(data, alldata, data.Length);
 
                 //发送
-                //this.clientSocket.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), this.clientSocket);
+                this.clientSocket.BeginSend(alldata, 0, alldata.Length, 0, new AsyncCallback(SendCallback), this.clientSocket);
             }
             catch (SocketException ex)
             { }
@@ -127,7 +134,7 @@ namespace SocketClient
 
         #region 接收
 
-        byte[] MsgBuffer = new byte[4096];
+        byte[] MsgBuffer = new byte[200];
 
         /// <summary>
         /// 接收数据
@@ -149,12 +156,34 @@ namespace SocketClient
 
                 if (REnd > 0)
                 {
+                    //byte[] data = new byte[REnd];
+                    //Array.Copy(MsgBuffer, 0, data, 0, REnd);
+
+                    //string str = System.Text.Encoding.UTF8.GetString(data);
+
+                    //总接收的数据
                     byte[] data = new byte[REnd];
                     Array.Copy(MsgBuffer, 0, data, 0, REnd);
 
-                    string str = System.Text.Encoding.UTF8.GetString(data);
-                    txtRecord.Text += string.Format("{0}  服务端：{1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), str);
-                    txtRecord.Text += "\r\n";
+                    //数据长度
+                    int dataLength = 0;
+
+                    //头
+                    byte[] dataArrayLength = new byte[1];
+                    Array.Copy(data, dataArrayLength, 1);
+
+                    //头信息
+                    dataLength =Convert.ToInt32(dataArrayLength[0]);
+
+                    //真实数据
+                    byte[] dataArray = new byte[dataLength];
+                    Array.Copy(data, 1, dataArray, 0, dataLength);
+
+                    ////收到结果                
+                    string str = System.Text.Encoding.UTF8.GetString(dataArray);
+                    //string str = System.Text.Encoding.UTF8.GetString(data);
+                    txtRecord.AppendText(string.Format("{0}  服务端：{1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), str));
+                    txtRecord.AppendText("\r\n");
                     //在此次可以对data进行按需处理
 
                     clientSocket.BeginReceive(MsgBuffer, 0, MsgBuffer.Length, 0, new AsyncCallback(ReceiveCallback), null);
@@ -189,7 +218,9 @@ namespace SocketClient
         public void InitSocketClient()
         {
             int port = 8099;
-            string host = "127.0.0.1";//服务器端ip地址
+            //string host = "192.168.0.236";//服务器端ip地址
+            string host = "192.168.0.47";//服务器端ip地址
+
 
             IPAddress ip = IPAddress.Parse(host);
             //IPEndPoint ipe = new IPEndPoint(ip, port);
@@ -204,11 +235,33 @@ namespace SocketClient
         /// <param name="e"></param>
         private void btnSend_Click(object sender, EventArgs e)
         {
+
             txtChat.Text = txtChat.Text.Trim();
+
+            //string str1 = "{'From':'P1','Operation':'ChooseCarColor','CarColor':'1'}";
+
+            //string str2 = "{'From':'P1','Operation':'ChooseCarColor','CarColor':'2'}";
+            //string str3 = "{'From':'P1','Operation':'ChooseCarColor','CarColor':'3'}";
+            //Send(str1);
+            //Send(str2);
+            //Send(str3);
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    //Send(str1);
+            //    Send(str2);
+            //    //Send(str3);
+            //}
+           
+            //for (int i = 0; i < 10; i++)
+            //{
+            //    Send(txtChat.Text);
+            //}
+            
+            
             Send(txtChat.Text);
             txtRecord.Text += string.Format("{0}  客户端：{1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), txtChat.Text);
             txtRecord.Text += "\r\n";
-            txtChat.Text = "";
+            //txtChat.Text = "{'From':'P1','Operation':'ChooseMap','Map':'snow'}";
         }
 
         private void txtChat_KeyPress_1(object sender, KeyPressEventArgs e)
@@ -220,9 +273,7 @@ namespace SocketClient
                 Send(txtChat.Text);
                 txtRecord.Text += string.Format("{0}  客服端：{1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), txtChat.Text);
                 txtRecord.Text += "\r\n";
-                txtChat.Text = "";
-                
-               
+                txtChat.Text = "{'From':'P1','Operation':'ChooseMap','Map':'snow'}";
             }
         }
 
@@ -264,6 +315,6 @@ namespace SocketClient
         //    }
         //}
 
-       
+
     }
 }

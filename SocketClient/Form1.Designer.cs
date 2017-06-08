@@ -78,6 +78,7 @@
             this.txtChat.Name = "txtChat";
             this.txtChat.Size = new System.Drawing.Size(565, 107);
             this.txtChat.TabIndex = 4;
+            this.txtChat.Text = "{\"From\":\"P1\",\"Operation\":\"ChooseMap\",\"Map\":\"snow\"}";
             this.txtChat.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtChat_KeyPress_1);
             // 
             // btnSend
